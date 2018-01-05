@@ -53,8 +53,22 @@ namespace KeeChallenge
             
             int slot = Properties.Settings.Default.YubikeySlot - 1;  //Important: for readability, the slot settings are not zero based. We must account for this during read/save
             YubiSlot yubiSlot = YubiSlot.SLOT2;
+
+            //Code to automatically check which slot the hmac is setup
+            YubiWrapper y = new YubiWrapper();
+            if (y.Init())
+            {
+                int ySlot = y.DetectSlot();
+                if (ySlot > 0)
+                {
+                    yubiSlot = (YubiSlot)(ySlot-1);
+                }
+            }
+
             if (Enum.IsDefined(typeof(YubiSlot),slot))
                 yubiSlot = (YubiSlot)slot;
+
+
 
             ToolStripItemCollection tsMenu = m_host.MainWindow.ToolsMenu.DropDownItems;
             m_Separator = new ToolStripSeparator();

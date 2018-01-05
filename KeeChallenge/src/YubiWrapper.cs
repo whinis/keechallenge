@@ -56,7 +56,7 @@ namespace KeeChallenge
         {
             get
             {
-                string codeBase = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
+                string codeBase = System.Reflection.Assembly.GetEntryAssembly().CodeBase;
                 UriBuilder uri = new UriBuilder(codeBase);
                 string path = Uri.UnescapeDataString(uri.Path);
                 return Path.GetDirectoryName(path);
@@ -71,6 +71,22 @@ namespace KeeChallenge
 
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail), DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string moduleName);
+
+        [DllImport("libykpers-1-1.dll")]
+        private static extern int yk_init();
+
+        [DllImport("libykpers-1-1.dll")]
+        private static extern int yk_release();
+
+        [DllImport("libykpers-1-1.dll")]
+        private static extern int yk_close_key(IntPtr yk);
+
+        [DllImport("libykpers-1-1.dll")]
+        private static extern IntPtr yk_open_first_key();
+
+        [DllImport("libykpers-1-1.dll")]
+        private static extern int yk_challenge_response(IntPtr yk, byte yk_cmd, int may_block, uint challenge_len, byte[] challenge, uint response_len, byte[] response);
+             
 
         [SecurityCritical]
         internal static bool DoesWin32MethodExist(string moduleName, string methodName)
@@ -138,27 +154,35 @@ namespace KeeChallenge
             catch (Exception e)
             {
                 Debug.Assert(false,e.Message);         
-                MessageBox.Show("Error connecting to yubikey!", "Error", MessageBoxButtons.OK);               
+                MessageBox.Show("Error connecting to yubikey in init!", "Error", MessageBoxButtons.OK);               
                 return false;
             }
            return true;
         }
 
-        [DllImport("libykpers-1-1.dll")]
-        private static extern int yk_init();
-
-        [DllImport("libykpers-1-1.dll")]
-        private static extern int yk_release();
-
-        [DllImport("libykpers-1-1.dll")]
-        private static extern int yk_close_key(IntPtr yk);
-
-        [DllImport("libykpers-1-1.dll")]
-        private static extern IntPtr yk_open_first_key();
-
-        [DllImport("libykpers-1-1.dll")]
-        private static extern int yk_challenge_response(IntPtr yk, byte yk_cmd, int may_block, uint challenge_len, byte[] challenge, uint response_len, byte[] response);
-               
+        public int DetectSlot()
+        {
+            // Get the correct slot if possible
+            Random rnd = new Random();
+            for (int i = 1; i <= 2; i++)
+            {
+                byte[] challenge = new byte[1];
+                rnd.NextBytes(challenge);
+                byte[] temp = new byte[yubiBuffLen];
+                int ret = yk_challenge_response(yk, slots[i], 0, 1, challenge, yubiBuffLen, temp);
+                if (ret == 2)
+                {
+                    System.Threading.Thread.Sleep(100);
+                    ret = yk_challenge_response(yk, slots[i], 0, 1, challenge, yubiBuffLen, temp);
+                }
+                if (ret != 2 && ret != -1)
+                {
+                    return i;
+                }
+            }
+            return 0;
+        }
+  
         public bool ChallengeResponse(YubiSlot slot, byte[] challenge, out byte[] response)
         {
             response = new byte[yubiRespLen];
