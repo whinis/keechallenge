@@ -31,6 +31,7 @@ namespace KeeChallenge
         private ToolStripMenuItem m_MenuItem = null;
         private ToolStripMenuItem m_YubiSlot1 = null;
         private ToolStripMenuItem m_YubiSlot2 = null;
+        private ToolStripMenuItem m_YubiSlot3 = null;
         private ToolStripSeparator m_Separator = null;
 
         public override String UpdateUrl
@@ -51,19 +52,10 @@ namespace KeeChallenge
 
             m_host = host;
             
-            int slot = Properties.Settings.Default.YubikeySlot - 1;  //Important: for readability, the slot settings are not zero based. We must account for this during read/save
-            YubiSlot yubiSlot = YubiSlot.SLOT2;
+            int slot = Properties.Settings.Default.YubikeySlot;  //Important: for readability, the slot settings are not zero based. We must account for this during read/save
+            YubiSlot yubiSlot = YubiSlot.AUTO;
 
-            //Code to automatically check which slot the hmac is setup
-            YubiWrapper y = new YubiWrapper();
-            if (y.Init())
-            {
-                int ySlot = y.DetectSlot();
-                if (ySlot > 0)
-                {
-                    yubiSlot = (YubiSlot)(ySlot-1);
-                }
-            }
+          
 
             if (Enum.IsDefined(typeof(YubiSlot),slot))
                 yubiSlot = (YubiSlot)slot;
@@ -75,22 +67,29 @@ namespace KeeChallenge
             tsMenu.Add(m_Separator);
 
             m_YubiSlot1 = new ToolStripMenuItem();
-            m_YubiSlot1.Name = "Slot1";
-            m_YubiSlot1.Text = "Slot 1";
+            m_YubiSlot1.Name = "Auto";
+            m_YubiSlot1.Text = "Auto";
             m_YubiSlot1.CheckOnClick = true;
-            m_YubiSlot1.Checked = yubiSlot == YubiSlot.SLOT1;
-            m_YubiSlot1.Click += (s, e) => { m_YubiSlot2.Checked = false; m_prov.YubikeySlot = YubiSlot.SLOT1; };
-            
+            m_YubiSlot1.Checked = yubiSlot == YubiSlot.AUTO;
+            m_YubiSlot1.Click += (s, e) => { m_YubiSlot2.Checked = false; m_YubiSlot3.Checked = false; m_prov.YubikeySlot = YubiSlot.AUTO; };
+
             m_YubiSlot2 = new ToolStripMenuItem();
-            m_YubiSlot2.Name = "Slot2";
-            m_YubiSlot2.Text = "Slot 2";
+            m_YubiSlot2.Name = "Slot1";
+            m_YubiSlot2.Text = "Slot 1";
             m_YubiSlot2.CheckOnClick = true;
-            m_YubiSlot2.Checked = yubiSlot == YubiSlot.SLOT2;
-            m_YubiSlot2.Click += (s, e) => { m_YubiSlot1.Checked = false; m_prov.YubikeySlot = YubiSlot.SLOT2; };
+            m_YubiSlot2.Checked = yubiSlot == YubiSlot.SLOT1;
+            m_YubiSlot2.Click += (s, e) => { m_YubiSlot1.Checked = false; m_YubiSlot3.Checked = false; m_prov.YubikeySlot = YubiSlot.SLOT1; };
+            
+            m_YubiSlot3 = new ToolStripMenuItem();
+            m_YubiSlot3.Name = "Slot2";
+            m_YubiSlot3.Text = "Slot 2";
+            m_YubiSlot3.CheckOnClick = true;
+            m_YubiSlot3.Checked = yubiSlot == YubiSlot.SLOT2;
+            m_YubiSlot3.Click += (s, e) => { m_YubiSlot1.Checked = false; m_YubiSlot2.Checked = false; m_prov.YubikeySlot = YubiSlot.SLOT2; };
 
             m_MenuItem = new ToolStripMenuItem();
             m_MenuItem.Text = "KeeChallenge Settings";
-            m_MenuItem.DropDownItems.AddRange(new ToolStripItem[] { m_YubiSlot1, m_YubiSlot2 });
+            m_MenuItem.DropDownItems.AddRange(new ToolStripItem[] { m_YubiSlot1, m_YubiSlot2, m_YubiSlot3 });
             
             tsMenu.Add(m_MenuItem);
 
@@ -107,10 +106,12 @@ namespace KeeChallenge
             {
                 m_host.KeyProviderPool.Remove(m_prov);
                 if (m_YubiSlot1.Checked)
-                    Properties.Settings.Default.YubikeySlot = 1;
+                    Properties.Settings.Default.YubikeySlot = 0;
                 else if (m_YubiSlot2.Checked)
+                    Properties.Settings.Default.YubikeySlot = 1;
+                else if (m_YubiSlot3.Checked)
                     Properties.Settings.Default.YubikeySlot = 2;
-                
+
                 Properties.Settings.Default.Save();
 
                 ToolStripItemCollection tsMenu = m_host.MainWindow.ToolsMenu.DropDownItems;

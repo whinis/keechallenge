@@ -30,8 +30,9 @@ namespace KeeChallenge
 {
     public enum YubiSlot
     {
-        SLOT1 = 0,
-        SLOT2 = 1
+        AUTO = 0,
+        SLOT1 = 1,
+        SLOT2 = 2,
     };
 
     public class YubiWrapper
@@ -59,7 +60,7 @@ namespace KeeChallenge
                 string codeBase = System.Reflection.Assembly.GetEntryAssembly().CodeBase;
                 UriBuilder uri = new UriBuilder(codeBase);
                 string path = Uri.UnescapeDataString(uri.Path);
-                return Path.GetDirectoryName(path);
+                return Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             }
         }
 
@@ -136,12 +137,6 @@ namespace KeeChallenge
                     
                     string _32BitDir = Path.Combine(AssemblyDirectory, "32bit");
                     string _64BitDir = Path.Combine(AssemblyDirectory, "64bit");
-                    if (!Directory.Exists(_32BitDir) || !Directory.Exists(_64BitDir))
-                    {
-                        string err = String.Format("Error: one of the following directories is missing:\n{0}\n{1}\nPlease reinstall KeeChallenge and ensure that these directories are present", _32BitDir, _64BitDir);
-                        MessageBox.Show(err);
-                        return false;
-                    }
                     if (!is64BitProcess) 
                         SetDllDirectory(_32BitDir);
                     else

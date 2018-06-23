@@ -85,6 +85,21 @@ namespace KeeChallenge
         {
             //Send the challenge to yubikey and get response
             if (Challenge == null) return;
+
+            if (yubiSlot == YubiSlot.AUTO)
+            {
+                //Code to automatically check which slot the hmac is setup
+                YubiWrapper y = new YubiWrapper();
+                if (y.Init())
+                {
+                    int ySlot = y.DetectSlot();
+                    if (ySlot > 0)
+                    {
+                        yubiSlot = (YubiSlot)(ySlot -1);
+                    }
+                }
+            }
+
             success = yubi.ChallengeResponse(yubiSlot, Challenge, out m_response);
             if (!success)
                 MessageBox.Show("Error getting response from Yubikey", "Error");           

@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>KeeChallenge</RootNamespace>
     <AssemblyName>KeeChallenge</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -72,9 +72,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="KeePass, Version=2.34.0.15991, Culture=neutral, PublicKeyToken=fed2ed7716aecf5c, processorArchitecture=MSIL">
+    <Reference Include="KeePass, Version=2.37.0.18738, Culture=neutral, PublicKeyToken=fed2ed7716aecf5c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\KeePass\Build\KeePass\Debug\KeePass.exe</HintPath>
+      <HintPath>C:\Program Files (x86)\KeePass Password Safe 2\KeePass.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -142,13 +142,197 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <PostBuildEvent>
+	echo POSTBUILDSTEP for $(ProjectName)
+
+	set KPDir=C:Program FilesKeePass Password Safe 2
+	set KPPDir=%25KPDir%25plugins
+	set KPPTempDir=%25KPPDir%25$(ProjectName)
+
+	IF NOT "$(ConfigurationName)"=="Debug" Goto :NotDebug
+	REM In debug mode we want to move the generated DLLs and PDBs to the plugins
+	REM directory so we can easily set breakpoints, etc.
+	REM In this case, we don't care if the Firefox add-on has missing or outdated
+	REM files (they are only used at install time so it won't affect debugging)
+
+	REM delete the PLGX from any previous Release build
+	del /Q "%25KPPDir%25$(ProjectName).plgx"
+	if errorlevel 1 goto BuildEventFailed
+	echo Release plgx deleted
+
+	REM copy output DLLs to KeePass plugins directory
+	copy "$(ProjectName).dll" "%25KPPDir%25$(ProjectName).dll"
+	if errorlevel 1 goto BuildEventFailed
+	xcopy /i /e /s /y /f "dll\*" "%25KPPDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	echo Debug DLLs copied to plugins directory
+
+	goto BuildEventOK
+
+	:NotDebug
+	IF NOT "$(ConfigurationName)"=="Release" Goto :NotRelease
+	REM In release mode we want to make sure that we are working with the PLGX version.
+	REM For the KeeFox project we will be in this mode quite a lot (whenever working
+	REM primarily on the Firefox add-on part of the project rather than KeeICE)
+
+	REM delete the DLLs from any previous Debug build
+	del /Q "%25KPPDir%25$(ProjectName).dll"
+	if errorlevel 1 goto BuildEventFailed
+	rmdir /S /Q "%25KPPDir%2532bit"
+	if errorlevel 1 goto BuildEventFailed
+	rmdir /S /Q "%25KPPDir%2564bit"
+	if errorlevel 1 goto BuildEventFailed
+	echo Debug DLLs deleted
+
+	REM create temporary directory
+	rmdir /S /Q "%25KPPTempDir%25"
+	mkdir "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	echo Temporary directory created
+
+	REM copy relevant project files to temporary directory
+	REM (for simple KeePass plugins you may need to
+	REM copy only *.cs files and .csproj file)
+	xcopy /i /e /s /y /f "dll\*" "%25KPPDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	copy "$(ProjectDir)*.cs" "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	copy "$(ProjectDir)$(ProjectName).csproj" "%25KPPTempDir%25$(ProjectName).csproj"
+	if errorlevel 1 goto BuildEventFailed
+	mkdir "%25KPPTempDir%25Properties"
+	copy "$(ProjectDir)PropertiesAssemblyInfo.cs" "%25KPPTempDir%25PropertiesAssemblyInfo.cs"
+	if errorlevel 1 goto BuildEventFailed
+	mkdir "%25KPPTempDir%25generated"
+	copy "$(ProjectDir)generatedKeeICE.cs" "%25KPPTempDir%25generatedKeeICE.cs"
+	if errorlevel 1 goto BuildEventFailed
+	echo Files copied to temporary directory
+
+	REM create the PLGX
+	"%25KPDir%25KeePass.exe" --plgx-create "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	echo PLGX created
+
+	REM delete the temporary directory and its contents
+	rmdir /S /Q "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	echo Temporary directory deleted
+
+	goto BuildEventOK
+	:NotReleasePlgx
+	echo Invalid configuration selected. Please choose a different build configuration
+	echo or modify the post-build script to add support for this configuration.
+
+	:BuildEventFailed
+	echo POSTBUILDSTEP for $(ProjectName) FAILED
+	exit 1
+
+	:BuildEventOK
+	echo POSTBUILDSTEP for $(ProjectName) COMPLETED OK</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+	echo POSTBUILDSTEP for $(ProjectName)
+
+	set KPDir=C:\Program Files (x86)\KeePass Password Safe 2
+	set KPPDir=%25KPDir%25\Plugins
+	set KPPTempDir=%25KPPDir%25\$(ProjectName)
+
+	IF NOT "$(ConfigurationName)"=="Debug" Goto :NotDebug
+	REM In debug mode we want to move the generated DLLs and PDBs to the plugins
+	REM directory so we can easily set breakpoints, etc.
+	REM In this case, we don't care if the Firefox add-on has missing or outdated
+	REM files (they are only used at install time so it won't affect debugging)
+
+	REM delete the PLGX from any previous Release build
+	del  \q "%25KPPDir%25\$(ProjectName).plgx"
+	if errorlevel 1 goto BuildEventFailed
+	echo Release plgx deleted
+
+	REM copy output DLLs to KeePass plugins directory
+	copy "$(ProjectName).dll" "%25KPPDir%25\$(ProjectName).dll"
+	if errorlevel 1 goto BuildEventFailed
+                  echo "$(ProjectDir)dlls\*.dll" "%25KPPDir%25"
+	xcopy /i /e /s /y /f "$(ProjectDir)dlls\*.dll" "%25KPPDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	echo Debug DLLs copied to plugins directory
+
+	goto BuildEventOK
+
+	:NotDebug
+	IF NOT "$(ConfigurationName)"=="Release" Goto :NotRelease
+	REM In release mode we want to make sure that we are working with the PLGX version.
+	REM For the KeeFox project we will be in this mode quite a lot (whenever working
+	REM primarily on the Firefox add-on part of the project rather than KeeICE)
+
+	REM delete the DLLs from any previous Debug build
+	del /Q "%25KPPDir%25\$(ProjectName).dll"
+	if errorlevel 1 goto BuildEventFailed
+	rmdir /S /Q "%25KPPDir%25\32bit"
+	if errorlevel 1 goto BuildEventFailed
+	rmdir /S /Q "%25KPPDir%25\64bit"
+	if errorlevel 1 goto BuildEventFailed
+	echo Debug DLLs deleted
+
+	REM create temporary directory
+	rmdir /S /Q "%25KPPTempDir%25"
+	mkdir "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	echo Temporary directory created
+
+	REM copy relevant project files to temporary directory
+	REM (for simple KeePass plugins you may need to
+	REM copy only *.cs files and .csproj file)
+	xcopy /i /e /s /y /f "$(ProjectDir)\dlls\*.dll" "%25KPPDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	copy "$(ProjectDir)*.cs" "%25KPPTempDir%25"
+                   if errorlevel 1 goto BuildEventFailed
+	copy "$(ProjectDir)*.resx" "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+                  copy "$(ProjectDir)*.png" "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	copy "$(ProjectDir)$(ProjectName).csproj" "%25KPPTempDir%25\$(ProjectName).csproj"
+	if errorlevel 1 goto BuildEventFailed
+	mkdir "%25KPPTempDir%25\Properties"
+	copy "$(ProjectDir)Properties\AssemblyInfo.cs" "%25KPPTempDir%25\Properties\AssemblyInfo.cs"
+	if errorlevel 1 goto BuildEventFailed
+                  copy "$(ProjectDir)Properties\*resx" "%25KPPTempDir%25\Properties"
+	if errorlevel 1 goto BuildEventFailed
+                   xcopy /i /e /s /y /f "$(ProjectDir)dlls\*.dll" "%25KPPTempDir%25"
+                   if errorlevel 1 goto BuildEventFailed
+	echo Files copied to temporary directory
+
+	REM create the PLGX
+	"%25KPDir%25\KeePass.exe" --plgx-create "%25KPPTempDir%25" --plgx-build-post:"cmd /c  xcopy /i /e /s /y /f  """{PLGX_TEMP_DIR}*bit""" """{PLGX_CACHE_DIR}""""
+	if errorlevel 1 goto BuildEventFailed
+	echo PLGX created
+
+	REM delete the temporary directory and its contents
+	rmdir /S /Q "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+	echo Temporary directory deleted
+
+	goto BuildEventOK
+	:NotReleasePlgx
+	echo Invalid configuration selected. Please choose a different build configuration
+	echo or modify the post-build script to add support for this configuration.
+
+	:BuildEventFailed
+	echo POSTBUILDSTEP for $(ProjectName) FAILED
+	exit 1
+
+	:BuildEventOK
+	echo POSTBUILDSTEP for $(ProjectName) COMPLETED OK</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

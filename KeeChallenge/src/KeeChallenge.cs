@@ -55,14 +55,16 @@ namespace KeeChallenge
 
         public KeeChallengeProv()
         {
-            YubikeySlot = YubiSlot.SLOT2;
+            YubikeySlot = YubiSlot.AUTO;
         }
 
         private IOConnectionInfo mInfo;
 
         public override string Name
         {
-            get { return m_name; }
+            get {
+                return m_name + "(" + YubikeySlot.ToString() + ")";
+            }
         }
 
         public override bool SecureDesktopCompatible
