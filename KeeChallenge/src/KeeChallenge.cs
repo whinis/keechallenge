@@ -26,6 +26,7 @@ using System.Linq;
 
 using KeePassLib.Keys;
 using KeePassLib.Utility;
+using KeePass.Plugins;
 using KeePassLib.Cryptography;
 using KeePassLib.Serialization;
 
@@ -38,6 +39,7 @@ namespace KeeChallenge
         public const int challengeLenBytes = 64;
         public const int secretLenBytes = 20;
         private bool m_LT64 = false;
+        public IPluginHost host;
 
         //If variable length challenges are enabled, a 63 byte challenge is sent instead.
         //See GenerateChallenge() and http://forum.yubico.com/viewtopic.php?f=16&t=1078
@@ -195,9 +197,22 @@ namespace KeeChallenge
 
                 xml.WriteEndElement();
                 xml.WriteEndDocument();
-                xml.Close();                
-  
-                ft.CommitWrite();  
+                xml.Close();
+
+                ft.CommitWrite();
+                host.Database.PublicCustomData.SetBool("KeeChallenge", true);
+                host.Database.PublicCustomData.SetString("KeeChallenge.encrypted", Convert.ToBase64String(encrypted));
+                host.Database.PublicCustomData.SetString("KeeChallenge.ic", Convert.ToBase64String(iv));
+                host.Database.PublicCustomData.SetString("KeeChallenge.challenge", Convert.ToBase64String(challenge));
+                host.Database.PublicCustomData.SetString("KeeChallenge.verification", Convert.ToBase64String(secretHash));
+                if(!LT64 && host.Database.PublicCustomData.GetBool("KeeChallenge.LT64",true))
+                {
+                    host.Database.PublicCustomData.Remove("KeeChallenge.LT64");
+                }else
+                {
+                    host.Database.PublicCustomData.SetBool("KeeChallenge.LT64",true);
+                }
+                host.MainWindow.UIFileSave(true);
             }
             catch (Exception)
             {
@@ -253,16 +268,38 @@ namespace KeeChallenge
             aes.Clear();
             return true;
         }
-       
-        private bool ReadEncryptedSecret(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out byte[] verification)
+
+        private bool ReadEncryptedSecretCustomData(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out byte[] verification)
         {
             encryptedSecret = null;
             iv = null;
             challenge = null;
             verification = null;
-            
-            LT64 = false; //default to false if not found
 
+            LT64 = false; //default to false if not found
+            if(host.Database.PublicCustomData.GetString("KeeChallenge.encrypted").Equals("")||
+                host.Database.PublicCustomData.GetString("KeeChallenge.iv").Equals("") |
+                host.Database.PublicCustomData.GetString("KeeChallenge.challenge").Equals("") ||
+                host.Database.PublicCustomData.GetString("KeeChallenge.verification").Equals(""))
+            {
+                return false;
+            }
+            encryptedSecret = Convert.FromBase64String(host.Database.PublicCustomData.GetString("KeeChallenge.encrypted").Trim());
+            iv = Convert.FromBase64String(host.Database.PublicCustomData.GetString("KeeChallenge.iv").Trim());
+            challenge = Convert.FromBase64String(host.Database.PublicCustomData.GetString("KeeChallenge.challenge").Trim());
+            verification = Convert.FromBase64String(host.Database.PublicCustomData.GetString("KeeChallenge.verification").Trim());
+            LT64 = host.Database.PublicCustomData.GetBool("KeeChallenge.LT64",false);
+            return true;
+
+        }
+        private bool ReadEncryptedSecretXML(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out byte[] verification)
+        {
+            encryptedSecret = null;
+            iv = null;
+            challenge = null;
+            verification = null;
+
+            LT64 = false; //default to false if not found
             XmlReader xml = null;
             Stream s = null;
             try
@@ -274,7 +311,7 @@ namespace KeeChallenge
                 XmlReaderSettings settings = new XmlReaderSettings();
                 settings.CloseInput = true;
                 xml = XmlReader.Create(s, settings);
-                
+
                 while (xml.Read())
                 {
                     if (xml.IsStartElement())
@@ -320,6 +357,26 @@ namespace KeeChallenge
             }
 
             //if failed, return false
+            return true;
+        }
+
+
+        private bool ReadEncryptedSecret(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out byte[] verification)
+        {
+            encryptedSecret = null;
+            iv = null;
+            challenge = null;
+            verification = null;
+            
+            LT64 = false; //default to false if not found
+            if (host.Database.PublicCustomData.GetBool("KeeChallenge",false))
+            {
+                return ReadEncryptedSecretCustomData(out encryptedSecret,out challenge,out iv,out verification);
+            }
+            else
+            {
+                return ReadEncryptedSecretXML(out encryptedSecret, out challenge, out iv, out verification);
+            }
             return true;
         }
 

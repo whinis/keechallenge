@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("KeeChallenge")]
 [assembly: AssemblyDescription("Key provider based on challenge-response")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Ben Rush")]
+[assembly: AssemblyCompany("John Turner")]
 [assembly: AssemblyProduct("KeePass Plugin")]
-[assembly: AssemblyCopyright("Copyright © 2014 Ben Rush")]
+[assembly: AssemblyCopyright("Copyright © 2018 John Turner")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.5")]
+[assembly: AssemblyVersion("1.6")]
 //[assembly: AssemblyFileVersion("1.1.*")]

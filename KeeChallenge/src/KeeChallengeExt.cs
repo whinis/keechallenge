@@ -36,7 +36,7 @@ namespace KeeChallenge
 
         public override String UpdateUrl
         {
-            get { return "https://github.com/brush701/keechallenge/raw/master/VERSION"; }
+            get { return "https://raw.githubusercontent.com/whinis/keechallenge/master/VERSION"; }
         }
 
         public IPluginHost Host
@@ -95,6 +95,7 @@ namespace KeeChallenge
 
             m_prov = new KeeChallengeProv();
             m_prov.YubikeySlot = yubiSlot;
+            m_prov.host = host;
             m_host.KeyProviderPool.Add(m_prov);
 
             return true;

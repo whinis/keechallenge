@@ -40,7 +40,7 @@ namespace KeeChallenge
         public const uint yubiRespLen = 20;
         private const uint yubiBuffLen = 64;
 
-        private List<string> nativeDLLs =  new List<string>() { "libykpers-1-1.dll", "libyubikey-0.dll", "libjson-0.dll", "libjson-c-2.dll" };
+        private List<string> nativeDLLs =  new List<string>() { "libykpers-1.dll", "libyubikey-0.dll", "libjson-0.dll", "libjson-c-2.dll" };
 
         private static bool is64BitProcess = (IntPtr.Size == 8);
 
@@ -73,19 +73,22 @@ namespace KeeChallenge
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail), DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string moduleName);
 
-        [DllImport("libykpers-1-1.dll")]
+        [DllImport("libykpers-1")]
         private static extern int yk_init();
 
-        [DllImport("libykpers-1-1.dll")]
+
+        [DllImport("libykpers-1")]
         private static extern int yk_release();
 
-        [DllImport("libykpers-1-1.dll")]
+
+        [DllImport("libykpers-1")]
         private static extern int yk_close_key(IntPtr yk);
 
-        [DllImport("libykpers-1-1.dll")]
+
+        [DllImport("libykpers-1")]
         private static extern IntPtr yk_open_first_key();
 
-        [DllImport("libykpers-1-1.dll")]
+        [DllImport("libykpers-1")]
         private static extern int yk_challenge_response(IntPtr yk, byte yk_cmd, int may_block, uint challenge_len, byte[] challenge, uint response_len, byte[] response);
              
 

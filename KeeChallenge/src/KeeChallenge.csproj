@@ -72,9 +72,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="KeePass, Version=2.37.0.18738, Culture=neutral, PublicKeyToken=fed2ed7716aecf5c, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\KeePass Password Safe 2\KeePass.exe</HintPath>
+    <Reference Include="KeePass">
+      <HintPath>..\..\..\KeePassSource\Build\KeePass\Debug\KeePass.exe</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -243,7 +243,7 @@
     <PostBuildEvent>
 	echo POSTBUILDSTEP for $(ProjectName)
 
-	set KPDir=C:\Program Files (x86)\KeePass Password Safe 2
+	set KPDir=Z:\Projects\Programming\KeePassBuild\KeePassSource\Build\KeePass\Debug
 	set KPPDir=%25KPDir%25\Plugins
 	set KPPTempDir=%25KPPDir%25\$(ProjectName)
 
@@ -292,27 +292,31 @@
 	REM copy relevant project files to temporary directory
 	REM (for simple KeePass plugins you may need to
 	REM copy only *.cs files and .csproj file)
-	xcopy /i /e /s /y /f "$(ProjectDir)\dlls\*.dll" "%25KPPDir%25"
-	if errorlevel 1 goto BuildEventFailed
 	copy "$(ProjectDir)*.cs" "%25KPPTempDir%25"
                    if errorlevel 1 goto BuildEventFailed
 	copy "$(ProjectDir)*.resx" "%25KPPTempDir%25"
 	if errorlevel 1 goto BuildEventFailed
                   copy "$(ProjectDir)*.png" "%25KPPTempDir%25"
 	if errorlevel 1 goto BuildEventFailed
+                  copy "$(ProjectDir)copyDlls.bat" "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
+                   copy "$(ProjectDir)KeeChallenge.dll.config" "%25KPPTempDir%25"
+	if errorlevel 1 goto BuildEventFailed
 	copy "$(ProjectDir)$(ProjectName).csproj" "%25KPPTempDir%25\$(ProjectName).csproj"
 	if errorlevel 1 goto BuildEventFailed
 	mkdir "%25KPPTempDir%25\Properties"
-	copy "$(ProjectDir)Properties\AssemblyInfo.cs" "%25KPPTempDir%25\Properties\AssemblyInfo.cs"
+	copy "$(ProjectDir)Properties\*.cs" "%25KPPTempDir%25\Properties"
 	if errorlevel 1 goto BuildEventFailed
-                  copy "$(ProjectDir)Properties\*resx" "%25KPPTempDir%25\Properties"
+                  copy "$(ProjectDir)Properties\*.resx" "%25KPPTempDir%25\Properties"
 	if errorlevel 1 goto BuildEventFailed
-                   xcopy /i /e /s /y /f "$(ProjectDir)dlls\*.dll" "%25KPPTempDir%25"
+                   xcopy /i /e /s /y /f "$(ProjectDir)32bit" "%25KPPTempDir%25\32bit"
+                   if errorlevel 1 goto BuildEventFailed
+                   xcopy /i /e /s /y /f "$(ProjectDir)64bit" "%25KPPTempDir%25\64bit"
                    if errorlevel 1 goto BuildEventFailed
 	echo Files copied to temporary directory
 
 	REM create the PLGX
-	"%25KPDir%25\KeePass.exe" --plgx-create "%25KPPTempDir%25" --plgx-build-post:"cmd /c  xcopy /i /e /s /y /f  """{PLGX_TEMP_DIR}*bit""" """{PLGX_CACHE_DIR}""""
+	"%25KPDir%25\KeePass.exe" --plgx-create "%25KPPTempDir%25" --plgx-build-post:"{PLGX_TEMP_DIR}copyDlls.bat {PLGX_TEMP_DIR} {PLGX_CACHE_DIR}"
 	if errorlevel 1 goto BuildEventFailed
 	echo PLGX created
 
