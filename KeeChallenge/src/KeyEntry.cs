@@ -95,12 +95,13 @@ namespace KeeChallenge
                     int ySlot = y.DetectSlot();
                     if (ySlot > 0)
                     {
-                        yubiSlot = (YubiSlot)(ySlot -1);
+                        yubiSlot = (YubiSlot)(ySlot);
                     }
                 }
             }
+            int slot = (int)yubiSlot;
 
-            success = yubi.ChallengeResponse(yubiSlot, Challenge, out m_response);
+            success = yubi.ChallengeResponse(slot-1, Challenge, out m_response);
             if (!success)
                 MessageBox.Show("Error getting response from Yubikey", "Error");           
 

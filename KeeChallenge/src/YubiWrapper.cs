@@ -181,13 +181,13 @@ namespace KeeChallenge
             return 0;
         }
   
-        public bool ChallengeResponse(YubiSlot slot, byte[] challenge, out byte[] response)
+        public bool ChallengeResponse(int slot, byte[] challenge, out byte[] response)
         {
             response = new byte[yubiRespLen];
             if (yk == IntPtr.Zero) return false;
             
             byte[] temp = new byte[yubiBuffLen];
-            int ret = yk_challenge_response(yk, slots[(int)slot], 1, (uint)challenge.Length, challenge, yubiBuffLen, temp);
+            int ret = yk_challenge_response(yk, slots[slot], 1, (uint)challenge.Length, challenge, yubiBuffLen, temp);
             if (ret == 1)
             {
                 Array.Copy(temp, response, response.Length);

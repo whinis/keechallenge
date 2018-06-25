@@ -4,6 +4,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeeChallenge", "KeeChallenge\src\KeeChallenge.csproj", "{904EDA59-83D9-45BC-9835-8358EDD2E0EF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC} = {900BA048-80DB-4294-B748-CFFB91EE9AEC}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PLGXUtil", "PLGXUtil\PLGXUtil.csproj", "{900BA048-80DB-4294-B748-CFFB91EE9AEC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +44,26 @@ Global
 		{904EDA59-83D9-45BC-9835-8358EDD2E0EF}.Release|x64.Build.0 = Release|x64
 		{904EDA59-83D9-45BC-9835-8358EDD2E0EF}.Release|x86.ActiveCfg = Release|x86
 		{904EDA59-83D9-45BC-9835-8358EDD2E0EF}.Release|x86.Build.0 = Release|x86
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|Win32.Build.0 = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|x64.Build.0 = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Debug|x86.Build.0 = Debug|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|Win32.ActiveCfg = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|Win32.Build.0 = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|x64.ActiveCfg = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|x64.Build.0 = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|x86.ActiveCfg = Release|Any CPU
+		{900BA048-80DB-4294-B748-CFFB91EE9AEC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
