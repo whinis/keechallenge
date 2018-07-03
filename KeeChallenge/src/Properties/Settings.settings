@@ -3,7 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="YubikeySlot" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">2</Value>
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="RegenChallenge" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

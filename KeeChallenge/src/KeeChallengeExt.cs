@@ -32,6 +32,9 @@ namespace KeeChallenge
         private ToolStripMenuItem m_YubiSlot1 = null;
         private ToolStripMenuItem m_YubiSlot2 = null;
         private ToolStripMenuItem m_YubiSlot3 = null;
+        private ToolStripMenuItem m_MenuItem2 = null;
+        private ToolStripMenuItem m_regnChallengeYes = null;
+        private ToolStripMenuItem m_regnChallengeNo = null;
         private ToolStripSeparator m_Separator = null;
 
         public override String UpdateUrl
@@ -54,6 +57,7 @@ namespace KeeChallenge
             
             int slot = Properties.Settings.Default.YubikeySlot;  //Important: for readability, the slot settings are not zero based. We must account for this during read/save
             YubiSlot yubiSlot = YubiSlot.AUTO;
+            bool regenChallenge = false;
 
           
 
@@ -88,14 +92,35 @@ namespace KeeChallenge
             m_YubiSlot3.Click += (s, e) => { m_YubiSlot1.Checked = false; m_YubiSlot2.Checked = false; m_prov.YubikeySlot = YubiSlot.SLOT2; };
 
             m_MenuItem = new ToolStripMenuItem();
-            m_MenuItem.Text = "KeeChallenge Settings";
+            m_MenuItem.Text = "KeeChallenge Yubikey Slot";
             m_MenuItem.DropDownItems.AddRange(new ToolStripItem[] { m_YubiSlot1, m_YubiSlot2, m_YubiSlot3 });
-            
+
             tsMenu.Add(m_MenuItem);
+
+            m_regnChallengeNo = new ToolStripMenuItem();
+            m_regnChallengeNo.Name = "No";
+            m_regnChallengeNo.Text = "No";
+            m_regnChallengeNo.CheckOnClick = true;
+            m_regnChallengeNo.Checked = regenChallenge == false;
+            m_regnChallengeNo.Click += (s, e) => { m_regnChallengeYes.Checked = false; m_prov.RegenChallenge = false;; };
+
+            m_regnChallengeYes = new ToolStripMenuItem();
+            m_regnChallengeYes.Name = "Yes";
+            m_regnChallengeYes.Text = "Yes";
+            m_regnChallengeYes.CheckOnClick = true;
+            m_regnChallengeYes.Checked = regenChallenge == true;
+            m_regnChallengeYes.Click += (s, e) => { m_regnChallengeNo.Checked = false; m_prov.RegenChallenge = true; };
+
+            m_MenuItem2 = new ToolStripMenuItem();
+            m_MenuItem2.Text = "KeeChallenge Regen Challenge";
+            m_MenuItem2.DropDownItems.AddRange(new ToolStripItem[] { m_regnChallengeYes, m_regnChallengeNo});
+
+
+            tsMenu.Add(m_MenuItem2);
 
             m_prov = new KeeChallengeProv();
             m_prov.YubikeySlot = yubiSlot;
-            m_prov.host = host;
+            m_prov.RegenChallenge = regenChallenge;
             m_host.KeyProviderPool.Add(m_prov);
 
             return true;
@@ -113,10 +138,16 @@ namespace KeeChallenge
                 else if (m_YubiSlot3.Checked)
                     Properties.Settings.Default.YubikeySlot = 2;
 
+                if (m_regnChallengeYes.Checked)
+                    Properties.Settings.Default.RegenChallenge = true;
+                else
+                    Properties.Settings.Default.RegenChallenge = false;
+
                 Properties.Settings.Default.Save();
 
                 ToolStripItemCollection tsMenu = m_host.MainWindow.ToolsMenu.DropDownItems;
                 tsMenu.Remove(m_MenuItem);
+                tsMenu.Remove(m_MenuItem2);
                 tsMenu.Remove(m_Separator);
 
                 m_prov = null;

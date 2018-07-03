@@ -184,7 +184,7 @@ namespace KeeChallenge
             {
                 yubi.Close();
             }
-            GlobalWindowManager.RemoveWindow(this);
+            //GlobalWindowManager.RemoveWindow(this);
         }
 
         private void AbortButton_Click(object sender, EventArgs e)
