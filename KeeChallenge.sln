@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeeChallenge", "KeeChallenge\src\KeeChallenge.csproj", "{904EDA59-83D9-45BC-9835-8358EDD2E0EF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{900BA048-80DB-4294-B748-CFFB91EE9AEC} = {900BA048-80DB-4294-B748-CFFB91EE9AEC}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PLGXUtil", "PLGXUtil\PLGXUtil.csproj", "{900BA048-80DB-4294-B748-CFFB91EE9AEC}"
 EndProject

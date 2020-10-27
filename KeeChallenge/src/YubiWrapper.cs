@@ -73,22 +73,22 @@ namespace KeeChallenge
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail), DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string moduleName);
 
-        [DllImport("libykpers-1")]
+        [DllImport("libykpers-1-1")]
         private static extern int yk_init();
 
 
-        [DllImport("libykpers-1")]
+        [DllImport("libykpers-1-1")]
         private static extern int yk_release();
 
 
-        [DllImport("libykpers-1")]
+        [DllImport("libykpers-1-1")]
         private static extern int yk_close_key(IntPtr yk);
 
 
-        [DllImport("libykpers-1")]
+        [DllImport("libykpers-1-1")]
         private static extern IntPtr yk_open_first_key();
 
-        [DllImport("libykpers-1")]
+        [DllImport("libykpers-1-1")]
         private static extern int yk_challenge_response(IntPtr yk, byte yk_cmd, int may_block, uint challenge_len, byte[] challenge, uint response_len, byte[] response);
              
 
@@ -167,7 +167,8 @@ namespace KeeChallenge
                 byte[] challenge = new byte[1];
                 rnd.NextBytes(challenge);
                 byte[] temp = new byte[yubiBuffLen];
-                int ret = yk_challenge_response(yk, slots[i], 0, 1, challenge, yubiBuffLen, temp);
+                int ret = yk_challenge_response(yk, slots[i-1], 0, 1, challenge, yubiBuffLen, temp);
+                
                 if (ret == 2)
                 {
                     System.Threading.Thread.Sleep(100);

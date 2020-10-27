@@ -57,3 +57,13 @@ $RECYCLE.BIN/
 
 # Mac jumk
 .DS_Store
+/KeeChallenge/src/32bit/libykpers-1-1.dll
+/KeeChallenge/src/64bit/libykpers-1-1.dll
+/KeeChallenge/KeeChallenge/src/PLGXUtil.exe
+/KeeChallenge/KeeChallenge/src/PLGXUtil.exe.config
+/KeeChallenge/KeeChallenge/src/PLGXUtil.pdb
+/KeeChallenge/src/PLGXUtil.exe
+/KeeChallenge/src/PLGXUtil.exe.config
+/KeeChallenge/src/PLGXUtil.pdb
+/PlgxTemp
+/KeeChallenge.plgx

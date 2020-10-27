@@ -87,11 +87,24 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="KeyEntrySelection.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="KeyEntrySelection.Designer.cs">
+      <DependentUpon>KeyEntrySelection.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ChallengeEntry.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ChallengeEntry.Designer.cs">
+      <DependentUpon>ChallengeEntry.cs</DependentUpon>
+    </Compile>
     <Compile Include="KeyCreation.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -118,6 +131,7 @@
     <Compile Include="RecoveryMode.Designer.cs">
       <DependentUpon>RecoveryMode.cs</DependentUpon>
     </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="YubiPrompt.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -125,6 +139,12 @@
       <DependentUpon>YubiPrompt.cs</DependentUpon>
     </Compile>
     <Compile Include="YubiWrapper.cs" />
+    <EmbeddedResource Include="KeyEntrySelection.resx">
+      <DependentUpon>KeyEntrySelection.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ChallengeEntry.resx">
+      <DependentUpon>ChallengeEntry.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="KeyCreation.resx">
       <DependentUpon>KeyCreation.cs</DependentUpon>
       <SubType>Designer</SubType>

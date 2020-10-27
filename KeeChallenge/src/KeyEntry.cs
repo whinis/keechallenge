@@ -100,7 +100,12 @@ namespace KeeChallenge
                 }
             }
             int slot = (int)yubiSlot;
-
+            slot = 2;
+            if (slot == 0)
+            {
+                MessageBox.Show("Error, no Challenge Response Config Detected", "Error");
+                return;
+            }
             success = yubi.ChallengeResponse(slot-1, Challenge, out m_response);
             if (!success)
                 MessageBox.Show("Error getting response from Yubikey", "Error");           

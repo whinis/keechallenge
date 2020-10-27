@@ -39,9 +39,7 @@ namespace KeeChallenge
         public const int keyLenBytes = 20;
         public const int challengeLenBytes = 64;
         public const int secretLenBytes = 20;
-        public const int configArrayLength = 1;
         private bool m_LT64 = false;
-        BitArray config = new BitArray(8* configArrayLength);
 
         //If variable length challenges are enabled, a 63 byte challenge is sent instead.
         //See GenerateChallenge() and http://forum.yubico.com/viewtopic.php?f=16&t=1078
@@ -57,7 +55,7 @@ namespace KeeChallenge
             set;
         }
 
-        public bool RegenChallenge
+        public bool UserChallenge
         {
             get;
             set;
@@ -97,6 +95,8 @@ namespace KeeChallenge
             string db = mInfo.Path;
             Regex rgx = new Regex(@"\.kdbx$");
             mInfo.Path = rgx.Replace(db, ".xml");
+
+            UserChallenge = !File.Exists(mInfo.Path); //Assume if no Xml that we are doing user challenge
 
             if (Object.ReferenceEquals(db,mInfo.Path)) //no terminating .kdbx found-> maybe using keepass 1? should never happen...
             {
@@ -138,8 +138,15 @@ namespace KeeChallenge
             return resp;
         }
 
-        private bool EncryptAndSave(byte[] secret, byte[] challenge, byte[] resp)
+        private bool EncryptAndSave(byte[] secret)
         {
+
+            //generate a random challenge for use next time
+            byte[] challenge = GenerateChallenge();
+
+            //generate the expected HMAC-SHA1 response for the challenge based on the secret
+            byte[] resp = GenerateResponse(challenge, secret);
+
 
             //use the response to encrypt the secret
             SHA256 sha = SHA256Managed.Create();
@@ -155,19 +162,13 @@ namespace KeeChallenge
 
             byte[] encrypted;
 
-            //verification to ensure decryption worked
-            byte[] verification = CryptoRandom.Instance.GetRandomBytes(10);
             ICryptoTransform enc = aes.CreateEncryptor();
             using (MemoryStream msEncrypt = new MemoryStream())
             {
                 using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, enc, CryptoStreamMode.Write))
                 {
-                    //config values that should be stored encrypted to prevent tampering
-                    byte[] ret = new byte[configArrayLength];
-                    config.CopyTo(ret, 0);
 
                     csEncrypt.Write(secret, 0, secret.Length);
-                    csEncrypt.Write(ret, 0, ret.Length);
                     csEncrypt.FlushFinalBlock();
 
                     encrypted = msEncrypt.ToArray();
@@ -203,8 +204,8 @@ namespace KeeChallenge
                 xml.WriteEndElement();
 
                 xml.WriteElementString("challenge", Convert.ToBase64String(challenge));
+                xml.WriteElementString("verification", Convert.ToBase64String(secretHash));
                 xml.WriteElementString("lt64", LT64.ToString());
-                xml.WriteElementString("newType", true.ToString());
 
                 xml.WriteEndElement();
                 xml.WriteEndDocument();
@@ -225,7 +226,7 @@ namespace KeeChallenge
             return true;
         }
 
-        private static bool DecryptSecret(byte[] encryptedSecret, byte[] yubiResp, byte[] iv, byte[] verification,bool newType, out byte[] secret)
+        private static bool DecryptSecret(byte[] encryptedSecret, byte[] yubiResp, byte[] iv, byte[] verification, out byte[] secret)
         {
             //use the response to decrypt the secret
             SHA256 sha = SHA256Managed.Create();
@@ -237,15 +238,7 @@ namespace KeeChallenge
             aes.IV = iv;
             aes.Padding = PaddingMode.PKCS7;
 
-            if (newType)
-            {
-                secret = new byte[challengeLenBytes];
-            }
-            else
-            {
-                secret = new byte[keyLenBytes];
-                
-            }
+            secret = new byte[keyLenBytes];
 
             ICryptoTransform dec = aes.CreateDecryptor();
             using (MemoryStream msDecrypt = new MemoryStream(encryptedSecret))
@@ -259,17 +252,28 @@ namespace KeeChallenge
                 msDecrypt.Close();
             }
 
+            byte[] secretHash = sha.ComputeHash(secret);
+            for (int i = 0; i < secretHash.Length; i++)
+            {
+                if (secretHash[i] != verification[i])
+                {
+                    MessageService.ShowWarning("Incorrect response!");
+                    Array.Clear(secret, 0, secret.Length);
+                    return false;
+                }
+            }
             //return the secret
             sha.Clear();
             aes.Clear();
             return true;
         }
-        private bool ReadEncryptedSecretXML(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out bool newType)
+
+        private bool ReadEncryptedSecret(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out byte[] verification)
         {
             encryptedSecret = null;
             iv = null;
             challenge = null;
-            newType = false;
+            verification = null;
 
             LT64 = false; //default to false if not found
             XmlReader xml = null;
@@ -302,13 +306,13 @@ namespace KeeChallenge
                                 xml.Read();
                                 challenge = Convert.FromBase64String(xml.Value.Trim());
                                 break;
+                            case "verification":
+                                xml.Read();
+                                verification = Convert.FromBase64String(xml.Value.Trim());
+                                break;
                             case "lt64":
                                 xml.Read();
                                 if (!bool.TryParse(xml.Value.Trim(), out m_LT64)) throw new Exception("Unable to parse LT64 flag");
-                                break;
-                            case "newType":
-                                xml.Read();
-                                if (!bool.TryParse(xml.Value.Trim(), out newType)) throw new Exception("Unable to parse newType flag");
                                 break;
 
                         }
@@ -332,26 +336,50 @@ namespace KeeChallenge
             return true;
         }
 
-
-        private bool ReadEncryptedSecret(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out bool newType)
-        {
-            encryptedSecret = null;
-            iv = null;
-            challenge = null;
-            newType = false;
-            
-            LT64 = false; //default to false if not found
-            return ReadEncryptedSecretXML(out encryptedSecret, out challenge, out iv, out newType);
-        }
-
         private byte[] Create(KeyProviderQueryContext ctx)
         {
 
             byte[] challenge = GenerateChallenge();
             byte[] resp = new byte[YubiWrapper.yubiRespLen];
+
+            KeyEntrySelection keySelectionForm = new KeyEntrySelection(this);
+
+            UserChallenge = keySelectionForm.ShowDialog() == System.Windows.Forms.DialogResult.OK;
+
+            if (UserChallenge)
+            {
+                ChallengeEntry challengeForm = new ChallengeEntry(this);
+
+                if (challengeForm.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
+
+                challenge = new byte[64];
+                byte[] challengeText = new byte[256];
+                challengeForm.Response.CopyTo(challengeText, 0);
+
+                Array.Clear(challengeForm.Response, 0, 256); //clear our memory to prevent snooping later
+
+                SHA512 chall512 = SHA512Managed.Create();
+                challenge = chall512.ComputeHash(challengeText);
+
+                Array.Clear(challengeText, 0, 256); //clear our memory to prevent snooping later
+
+            }
+
             KeyEntry entryForm = new KeyEntry(this, challenge);
 
             if (entryForm.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
+
+            SHA256 sha = SHA256Managed.Create();
+            byte[] hashedSecret;
+
+            //If user challenge was selected then just hash the yubikey response and return it.
+            if (UserChallenge)
+            {
+                entryForm.Response.CopyTo(resp, 0);
+                Array.Clear(entryForm.Response, 0, entryForm.Response.Length);
+                hashedSecret = sha.ComputeHash(resp);
+                return hashedSecret;
+            }
 
             byte[] secret = GenerateChallenge();
 
@@ -362,14 +390,13 @@ namespace KeeChallenge
             entryForm.Response.CopyTo(resp, 0);
             Array.Clear(entryForm.Response, 0, entryForm.Response.Length);
 
-            if (!EncryptAndSave(secret, challenge, resp))
+            if (!EncryptAndSave(secret))
             {
                 return null;
             }
 
             //store the encrypted secret, the iv, and the challenge to disk           
-            SHA256 sha = SHA256Managed.Create();
-            byte[] hashedSecret = sha.ComputeHash(secret);
+            hashedSecret = sha.ComputeHash(secret);
             return hashedSecret;
         }
 
@@ -381,28 +408,49 @@ namespace KeeChallenge
             byte[] challenge = null;
             byte[] verification = null;
             byte[] secret = null;
-            byte[] configArray = null;
-            bool newType = false;
+
 
             //show the dialog box prompting user to press yubikey button
             byte[] resp = new byte[YubiWrapper.yubiRespLen];
-            KeyEntry entryForm = new KeyEntry(this, challenge);
-            if (!ReadEncryptedSecret(out encryptedSecret, out challenge, out iv,out newType))
+
+            if (UserChallenge)
             {
-                secret = RecoveryMode();
-                EncryptAndSave(secret,challenge,resp);
-                SHA256 sha = SHA256Managed.Create();
-                byte[] hashedSecret = sha.ComputeHash(secret);
-                return hashedSecret;
+                ChallengeEntry challengeForm = new ChallengeEntry(this);
+
+                if (challengeForm.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
+
+                challenge = new byte[64];
+                byte[] challengeText = new byte[256];
+                challengeForm.Response.CopyTo(challengeText, 0);
+
+                Array.Clear(challengeForm.Response, 0, 256); //clear our memory to prevent snooping later
+
+                SHA512 chall512 = SHA512Managed.Create();
+                challenge = chall512.ComputeHash(challengeText);
+
+                Array.Clear(challengeText, 0, 256); //clear our memory to prevent snooping later
+
+            }
+            else
+            {
+                if (!ReadEncryptedSecret(out encryptedSecret, out challenge, out iv, out verification))
+                {
+                    secret = RecoveryMode();
+                    EncryptAndSave(secret);
+                    SHA256 sha = SHA256Managed.Create();
+                    byte[] hashedSecret = sha.ComputeHash(secret);
+                    return hashedSecret;
+                }
             }
 
-            entryForm.Challenge = challenge;
+            KeyEntry entryForm = new KeyEntry(this, challenge);
+
             if (entryForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
             {
                 if (entryForm.RecoveryMode)
                 {
                     secret = RecoveryMode();
-                    EncryptAndSave(secret, challenge, resp);
+                    EncryptAndSave(secret);
                     SHA256 sha = SHA256Managed.Create();
                     byte[] hashedSecret = sha.ComputeHash(secret);
                     return hashedSecret;
@@ -414,38 +462,24 @@ namespace KeeChallenge
             entryForm.Response.CopyTo(resp,0);
             Array.Clear(entryForm.Response,0,entryForm.Response.Length);
 
-            //attempt to decrypt the current secret
-            if (DecryptSecret(encryptedSecret, resp, iv, verification,newType, out secret))
+            //If we are using user challenges then take the response from the yubikey and hash that as our secret
+            if (UserChallenge)
             {
-                if (RegenChallenge)
-                {
-                    challenge = GenerateChallenge();
-                    entryForm = new KeyEntry(this, challenge);
-                    if (entryForm.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                    {
-                        entryForm.Response.CopyTo(resp, 0);
-                        Array.Clear(entryForm.Response, 0, entryForm.Response.Length);
-                        if (EncryptAndSave(secret, challenge, resp))
-                        {
-                            SHA256 sha = SHA256Managed.Create();
-                            byte[] hashedSecret = sha.ComputeHash(secret);
-                            return hashedSecret;
-                        }
-                        else return null;
-                    }
-                    else return null;
-                }
-                else
-                {
-                    SHA256 sha = SHA256Managed.Create();
-                    byte[] hashedSecret = sha.ComputeHash(secret);
-                    return hashedSecret;
-                }
+                SHA256 sha = SHA256Managed.Create();
+                byte[] hashedSecret = sha.ComputeHash(resp);
+                return hashedSecret;
+            }
+            //otherwise attempt to decrypt a secret from our XML file 
+            else if (DecryptSecret(encryptedSecret, resp, iv, verification, out secret))
+            {
+                SHA256 sha = SHA256Managed.Create();
+                byte[] hashedSecret = sha.ComputeHash(secret);
+                return hashedSecret;
             }
             else
             {
                 return null;
-            }
+            }              
         }
 
         private byte[] RecoveryMode()
