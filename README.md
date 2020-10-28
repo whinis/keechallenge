@@ -3,7 +3,7 @@
 Copyright 2014 Ben Rush
 Copyright 2020 Whinis
 ## Changes
-v1.67
+v1.7
 * Added the ability for user entered challenges 
 
 v1.6
