@@ -1,8 +1,15 @@
-[KeeChallenge v1.5](http://brush701.github.io/keechallenge/ "KeeChallenge Documentation")
+[KeeChallenge v1.7](http://brush701.github.io/keechallenge/ "KeeChallenge Documentation")
 =================
 Copyright 2014 Ben Rush
-
+Copyright 2020 Whinis
 ## Changes
+v1.67
+* Added the ability for user entered challenges 
+
+v1.6
+* Started work on this personally and got PGLX builds working
+
+
 v1.5
 * Thanks to Robert Claypool for his numerous contributions to clean up and improve Keechallenge
 * Migrated to Github from Sourceforge.
