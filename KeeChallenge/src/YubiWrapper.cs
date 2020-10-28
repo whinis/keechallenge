@@ -89,6 +89,9 @@ namespace KeeChallenge
         private static extern IntPtr yk_open_first_key();
 
         [DllImport("libykpers-1-1")]
+        private static extern IntPtr yk_open_key_vid_pid(int vid, IntPtr pids, UIntPtr pids_len, int index);
+
+        [DllImport("libykpers-1-1")]
         private static extern int yk_challenge_response(IntPtr yk, byte yk_cmd, int may_block, uint challenge_len, byte[] challenge, uint response_len, byte[] response);
              
 
@@ -110,6 +113,7 @@ namespace KeeChallenge
         });
 
         private IntPtr yk = IntPtr.Zero;
+        private bool m_onlyKey = false;
 
         public bool Init()
         {
@@ -147,7 +151,26 @@ namespace KeeChallenge
                 }
                 if (yk_init() != 1) return false;
                 yk = yk_open_first_key();
-                if (yk == IntPtr.Zero) return false;
+                if (yk == IntPtr.Zero) //if its false attempt onlykey
+                {
+                    int[] device_pids = { 0x60fc }; // OnlyKey PID
+                    GCHandle handle = GCHandle.Alloc(device_pids, GCHandleType.Pinned);
+                    try
+                    {
+                        IntPtr pointer = handle.AddrOfPinnedObject();
+                        yk = yk_open_key_vid_pid(0x1d50, pointer, new UIntPtr(1), 0);
+                        m_onlyKey = true;
+                    }
+                    finally
+                    {
+                        if (handle.IsAllocated)
+                        {
+                            handle.Free();
+                        }
+                    }
+
+                }
+                if (yk == IntPtr.Zero) return false; //if still false then return false
             }
             catch (Exception e)
             {
