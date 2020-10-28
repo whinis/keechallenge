@@ -67,3 +67,7 @@ $RECYCLE.BIN/
 /KeeChallenge/src/PLGXUtil.pdb
 /PlgxTemp
 /KeeChallenge.plgx
+/KeeChallenge/KeeChallenge/src
+/KeeChallenge/src/PLGXUtil.vshost.exe.manifest
+/KeeChallenge/src/PLGXUtil.vshost.exe.config
+/KeeChallenge/src/PLGXUtil.vshost.exe

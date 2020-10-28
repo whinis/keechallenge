@@ -10,11 +10,15 @@ namespace KeeChallenge
     public partial class ChallengeEntry : Form
     {
         private byte[] m_response;
+        public bool newKey
+        {
+            set { promptLabel.Text = "Reenter Challenge"; }
+        }
 
         public byte[] Response
         {
             get { return m_response; }
-            private set { m_response = value; }
+            set { m_response = value; }
         }
 
         public ChallengeEntry(KeeChallengeProv parent)

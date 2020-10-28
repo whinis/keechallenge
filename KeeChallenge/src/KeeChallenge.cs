@@ -63,7 +63,7 @@ namespace KeeChallenge
 
         public KeeChallengeProv()
         {
-            YubikeySlot = YubiSlot.AUTO;
+            YubikeySlot = YubiSlot.SLOT2;
         }
 
         private IOConnectionInfo mInfo;
@@ -140,13 +140,11 @@ namespace KeeChallenge
 
         private bool EncryptAndSave(byte[] secret)
         {
-
             //generate a random challenge for use next time
             byte[] challenge = GenerateChallenge();
 
             //generate the expected HMAC-SHA1 response for the challenge based on the secret
             byte[] resp = GenerateResponse(challenge, secret);
-
 
             //use the response to encrypt the secret
             SHA256 sha = SHA256Managed.Create();
@@ -161,13 +159,11 @@ namespace KeeChallenge
             byte[] iv = aes.IV;
 
             byte[] encrypted;
-
             ICryptoTransform enc = aes.CreateEncryptor();
             using (MemoryStream msEncrypt = new MemoryStream())
             {
                 using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, enc, CryptoStreamMode.Write))
                 {
-
                     csEncrypt.Write(secret, 0, secret.Length);
                     csEncrypt.FlushFinalBlock();
 
@@ -209,9 +205,9 @@ namespace KeeChallenge
 
                 xml.WriteEndElement();
                 xml.WriteEndDocument();
-                xml.Close();
-
-                ft.CommitWrite();
+                xml.Close();                
+  
+                ft.CommitWrite();  
             }
             catch (Exception)
             {
@@ -239,7 +235,6 @@ namespace KeeChallenge
             aes.Padding = PaddingMode.PKCS7;
 
             secret = new byte[keyLenBytes];
-
             ICryptoTransform dec = aes.CreateDecryptor();
             using (MemoryStream msDecrypt = new MemoryStream(encryptedSecret))
             {
@@ -262,20 +257,22 @@ namespace KeeChallenge
                     return false;
                 }
             }
+
             //return the secret
             sha.Clear();
             aes.Clear();
             return true;
         }
-
+       
         private bool ReadEncryptedSecret(out byte[] encryptedSecret, out byte[] challenge, out byte[] iv, out byte[] verification)
         {
             encryptedSecret = null;
             iv = null;
             challenge = null;
             verification = null;
-
+            
             LT64 = false; //default to false if not found
+
             XmlReader xml = null;
             Stream s = null;
             try
@@ -287,7 +284,7 @@ namespace KeeChallenge
                 XmlReaderSettings settings = new XmlReaderSettings();
                 settings.CloseInput = true;
                 xml = XmlReader.Create(s, settings);
-
+                
                 while (xml.Read())
                 {
                     if (xml.IsStartElement())
@@ -338,57 +335,80 @@ namespace KeeChallenge
 
         private byte[] Create(KeyProviderQueryContext ctx)
         {
-
-            byte[] challenge = GenerateChallenge();
-            byte[] resp = new byte[YubiWrapper.yubiRespLen];
-
             KeyEntrySelection keySelectionForm = new KeyEntrySelection(this);
-
             UserChallenge = keySelectionForm.ShowDialog() == System.Windows.Forms.DialogResult.OK;
 
             if (UserChallenge)
             {
+                String xmlFilePath = mInfo.Path;
+                String xmlAddtion = "";
+                if (File.Exists(xmlFilePath))
+                { //if XML does exists rename it so its not detected anymore
+                    int i = 0;
+                    xmlFilePath = xmlFilePath + ".bak";
+                    while (File.Exists(xmlFilePath + xmlAddtion))
+                    {
+                        xmlAddtion = i.ToString();
+                        i++;
+                    }
+                    File.Move(mInfo.Path, xmlFilePath + xmlAddtion);
+                }
+
+                byte[] resp = new byte[YubiWrapper.yubiRespLen];
+
                 ChallengeEntry challengeForm = new ChallengeEntry(this);
 
                 if (challengeForm.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
 
-                challenge = new byte[64];
+                byte[]  challenge = new byte[64];
                 byte[] challengeText = new byte[256];
+                byte[] challengeTextRepeat = new byte[256];
                 challengeForm.Response.CopyTo(challengeText, 0);
 
                 Array.Clear(challengeForm.Response, 0, 256); //clear our memory to prevent snooping later
+
+                challengeForm = new ChallengeEntry(this);
+                challengeForm.newKey = true;
+
+                if (challengeForm.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
+                challengeForm.Response.CopyTo(challengeTextRepeat, 0);
+
+                Array.Clear(challengeForm.Response, 0, 256); //clear our memory to prevent snooping later
+                if (!challengeTextRepeat.SequenceEqual(challengeText))
+                {
+                    MessageService.ShowWarning("Error: Challenges did not match");
+                    return null;
+                }
+                Array.Clear(challengeTextRepeat, 0, 256);
 
                 SHA512 chall512 = SHA512Managed.Create();
                 challenge = chall512.ComputeHash(challengeText);
 
                 Array.Clear(challengeText, 0, 256); //clear our memory to prevent snooping later
 
-            }
+                KeyEntry entryForm = new KeyEntry(this, challenge);
 
-            KeyEntry entryForm = new KeyEntry(this, challenge);
+                if (entryForm.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
 
-            if (entryForm.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
-
-            SHA256 sha = SHA256Managed.Create();
-            byte[] hashedSecret;
-
-            //If user challenge was selected then just hash the yubikey response and return it.
-            if (UserChallenge)
-            {
+                SHA256 sha = SHA256Managed.Create();
                 entryForm.Response.CopyTo(resp, 0);
                 Array.Clear(entryForm.Response, 0, entryForm.Response.Length);
-                hashedSecret = sha.ComputeHash(resp);
+
+                byte[]  hashedSecret = sha.ComputeHash(resp);
+
                 return hashedSecret;
             }
-
-            byte[] secret = GenerateChallenge();
 
             //show the entry dialog for the secret
             //get the secret
             KeyCreation creator = new KeyCreation(this);
 
-            entryForm.Response.CopyTo(resp, 0);
-            Array.Clear(entryForm.Response, 0, entryForm.Response.Length);
+            if (creator.ShowDialog() != System.Windows.Forms.DialogResult.OK) return null;
+
+            byte[] secret = new byte[creator.Secret.Length];
+            
+            Array.Copy(creator.Secret, secret, creator.Secret.Length); //probably paranoid here, but not a big performance hit
+            Array.Clear(creator.Secret, 0, creator.Secret.Length);
 
             if (!EncryptAndSave(secret))
             {
@@ -396,8 +416,8 @@ namespace KeeChallenge
             }
 
             //store the encrypted secret, the iv, and the challenge to disk           
-            hashedSecret = sha.ComputeHash(secret);
-            return hashedSecret;
+           
+            return secret;
         }
 
         private byte[] Get(KeyProviderQueryContext ctx)
@@ -408,10 +428,6 @@ namespace KeeChallenge
             byte[] challenge = null;
             byte[] verification = null;
             byte[] secret = null;
-
-
-            //show the dialog box prompting user to press yubikey button
-            byte[] resp = new byte[YubiWrapper.yubiRespLen];
 
             if (UserChallenge)
             {
@@ -437,23 +453,20 @@ namespace KeeChallenge
                 {
                     secret = RecoveryMode();
                     EncryptAndSave(secret);
-                    SHA256 sha = SHA256Managed.Create();
-                    byte[] hashedSecret = sha.ComputeHash(secret);
-                    return hashedSecret;
+                    return secret;
                 }
             }
-
+            //show the dialog box prompting user to press yubikey button
+            byte[] resp = new byte[YubiWrapper.yubiRespLen];
             KeyEntry entryForm = new KeyEntry(this, challenge);
-
+            
             if (entryForm.ShowDialog() != System.Windows.Forms.DialogResult.OK)
             {
                 if (entryForm.RecoveryMode)
                 {
                     secret = RecoveryMode();
                     EncryptAndSave(secret);
-                    SHA256 sha = SHA256Managed.Create();
-                    byte[] hashedSecret = sha.ComputeHash(secret);
-                    return hashedSecret;
+                    return secret;
                 }
 
                 else return null;                
@@ -470,16 +483,17 @@ namespace KeeChallenge
                 return hashedSecret;
             }
             //otherwise attempt to decrypt a secret from our XML file 
-            else if (DecryptSecret(encryptedSecret, resp, iv, verification, out secret))
+            else 
+            if (DecryptSecret(encryptedSecret, resp, iv, verification, out secret))
             {
-                SHA256 sha = SHA256Managed.Create();
-                byte[] hashedSecret = sha.ComputeHash(secret);
-                return hashedSecret;
+                if (EncryptAndSave(secret))
+                    return secret;
+                else return null;
             }
             else
             {
                 return null;
-            }              
+            }
         }
 
         private byte[] RecoveryMode()
