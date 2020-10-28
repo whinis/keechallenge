@@ -91,7 +91,7 @@ namespace KeeChallenge
             m_MenuItem.Text = "KeeChallenge Yubikey Slot";
             m_MenuItem.DropDownItems.AddRange(new ToolStripItem[] { m_YubiSlot1, m_YubiSlot2, m_YubiSlot3 });
 
-            tsMenu.Add(m_Separator);
+            tsMenu.Add(m_MenuItem);
 
             m_prov = new KeeChallengeProv();
             m_prov.YubikeySlot = yubiSlot;
