@@ -330,7 +330,7 @@
 	if errorlevel 1 goto BuildEventFailed
                    copy "$(ProjectDir)PLGXUtil.exe" "$(SolutionDir)PlgxTemp\"
 	if errorlevel 1 goto BuildEventFailed
-                   copy "$(ProjectDir)KeeChallenge.dll.config" "$(SolutionDir)PlgxTemp\"
+                   copy "$(ProjectDir)app.config" "$(SolutionDir)PlgxTemp\"
 	if errorlevel 1 goto BuildEventFailed
 	copy "$(ProjectDir)$(ProjectName).csproj" "$(SolutionDir)PlgxTemp\$(ProjectName).csproj"
 	if errorlevel 1 goto BuildEventFailed

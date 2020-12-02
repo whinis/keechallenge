@@ -40,7 +40,7 @@ namespace KeeChallenge
         public const uint yubiRespLen = 20;
         private const uint yubiBuffLen = 64;
 
-        private List<string> nativeDLLs =  new List<string>() { "libykpers-1.dll", "libyubikey-0.dll", "libjson-0.dll", "libjson-c-2.dll" };
+        private List<string> nativeDLLs =  new List<string>() { "libykpers-1-1.dll", "libyubikey-0.dll", "libjson-0.dll", "libjson-c-2.dll" };
 
         private static bool is64BitProcess = (IntPtr.Size == 8);
 
@@ -174,7 +174,8 @@ namespace KeeChallenge
             }
             catch (Exception e)
             {
-                Debug.Assert(false,e.Message);         
+				Console.WriteLine(e.ToString());
+				Debug.Assert(false,e.Message);         
                 MessageBox.Show("Error connecting to yubikey in init!", "Error", MessageBoxButtons.OK);               
                 return false;
             }

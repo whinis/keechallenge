@@ -7,7 +7,8 @@ namespace PLGXUtil
     {
         static void Main(string[] args)
         {
-            if (!IsLinux)
+			File.Copy(args[0] + "app.config", args[1] + "KeeChallenge.dll.config");
+			if (!IsLinux)
             {
                 string dir1 = args[0] + "\\32bit";
                 string dir2 = args[0] + "\\64bit";
@@ -19,10 +20,6 @@ namespace PLGXUtil
                 {
                     DirectoryCopy(dir2, args[1] + "\\64bit", false);
                 }
-            }
-            else
-            {
-                File.Copy(args[0] + "KeeChallenge.dll.config", args[1] + "KeeChallenge.dll.config");
             }
 
         }
