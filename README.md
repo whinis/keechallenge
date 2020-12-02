@@ -1,6 +1,7 @@
 [KeeChallenge v1.7](http://brush701.github.io/keechallenge/ "KeeChallenge Documentation")
 =================
 Copyright 2014 Ben Rush
+
 Copyright 2020 Whinis
 ## Changes
 v1.7
@@ -49,7 +50,7 @@ v1.0.1
 * Updated KeeEntry.cs and YubiWrapper.cs to properly initialize and clean up the native Yubico libraries
 
 ## Supported Platforms
-As of v1.0.1 both Windows and Linux (Ubuntu) have been tested successfully. To run under Linux using mono, you must modify `KeeChallenge.dll.config` and add a dllmap entry to let Mono know where to find the native libraries. On my system this looks like `<dllmap dll="libykpers-1-1.dll" target="libykpers-1.so>`. For this to work, you must also obtain the appropriate versions of the Yubico libraries. Make sure all of the Yubico libraries are installed where mono can find them (for example, /usr/lib). Put both `KeeChallenge.dll` and `KeeChallenge.dll.config` in the KeePass2 folder (on Ubuntu this is `/usr/lib/keepass2`). The same technique will work on OSX, but getting the 32bit Yubico libraries requires building from source. See the OSX Guide by Markku for detailed instructions on how to do this.  
+As of v1.7.1 both Windows and Linux (Ubuntu) have been tested successfully. To run under Linux using mono you need libykpers installed on your system. If you are using the plgx build it should just "work" with one notable exception. After you add the PLGX the first launch will fail to load libykpers properly, I believe this is an artifact of how it unpacks the plgx. So you need to start KeePass, let it compile the plugin, and then close it and open again. If you are using the source or DLL download you must modify `KeeChallenge.dll.config` and add a dllmap entry to let Mono know where to find the native libraries. On my system this looks like `<dllmap dll="libykpers-1-1.dll" target="libykpers-1.so>`. For this to work, you must also obtain the appropriate versions of the Yubico libraries. Make sure all of the Yubico libraries are installed where mono can find them (for example, /usr/lib). Put both `KeeChallenge.dll` and `KeeChallenge.dll.config` in the KeePass2 folder (on Ubuntu this is `/usr/lib/keepass2`). The same technique will work on OSX, but getting the 32bit Yubico libraries requires building from source. See the OSX Guide by Markku for detailed instructions on how to do this.  
 
 ## Dependencies
 KeeChallenge requires KeePass2, available from http://keepass.info/download.html. It also requires the Yubico open source library yubico-personalization (which in turn depends on yubico-c). Prebuilt bundled binaries are available from http://opensource.yubico.com/yubikey-personalization/releases.html. 
